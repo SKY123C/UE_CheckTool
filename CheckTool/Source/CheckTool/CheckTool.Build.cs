@@ -26,6 +26,7 @@ public class CheckTool : ModuleRules
 			new string[]
 			{
 				"Core",
+                "EditorSubsystem"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

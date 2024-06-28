@@ -11,5 +11,5 @@ class UCheckToolBPLib : public UBlueprintFunctionLibrary
 	static void Test();
 
 	UFUNCTION(BlueprintCallable)
-	static void RegisterPlugins(TArray<TSubclassOf<UCheckToolContext>> PluginContextLis);
+	static void RegisterPlugins(TArray<TSubclassOf<UCheckToolPlugin>> PluginContextLis);
 };

@@ -1,7 +1,11 @@
 #include "TemplateClass/CheckTemplate.h"
 
+bool UCheckToolCollection::Process_Implementation(UCheckToolContext* Context)
+{
+	return false;
+}
 
-bool UCheckToolContext::Process_Implementation()
+bool UCheckToolValidation::Process_Implementation(const FCheckToolInstance& Instance)
 {
 	return false;
 }
