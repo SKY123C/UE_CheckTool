@@ -1,58 +1,53 @@
 #include "CheckToolEditorSubsystem.h"
 #include "Misc/ScopedSlowTask.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 
 UCheckToolEditorSubsystem::UCheckToolEditorSubsystem()
 {
+
+}
+
+void UCheckToolEditorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+	Super::Initialize(Collection);
 	Context = UCheckToolContext::Get();
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+	AssetRegistryModule.GetRegistry().OnAssetAdded().AddUObject(this, &UCheckToolEditorSubsystem::OnAssetAdded);
 }
 
-void UCheckToolEditorSubsystem::RegisterPlugins(TArray<UCheckToolPlugin*> PluginContextList)
+TArray<UCheckToolPlugin*> UCheckToolEditorSubsystem::RegisterPlugins(TArray<UCheckToolPlugin*> PluginContextList)
 {
+	TArray<UCheckToolPlugin*> OutPlugins;
+	bool Result = false;
 	for (auto Plugin : PluginContextList)
 	{
-		if (FindPlugin(Plugin))
+		if (FindPlugin(Plugin) && CheckPlugin(Plugin))
+			OutPlugins.Add(Plugin);
 			continue;
-			
-		UClass* InClass = Plugin->GetClass();
-		if (InClass->IsChildOf(UCheckToolCollection::StaticClass()))
-		{
-			CollectionList.Add(Plugin);
-		}
-		else if (InClass->IsChildOf(UCheckToolValidation::StaticClass()))
-		{
-			ValidatioList.Add(Plugin);
-		};
+		CheckToolPlugins.Add(Plugin);
 	}
-	ValidatioList.Sort([](const UCheckToolPlugin& PluginA, const UCheckToolPlugin& PluginB) {
-		return PluginA.Order < PluginB.Order;
-	});
-
-	CollectionList.Sort([](const UCheckToolPlugin& PluginA, const UCheckToolPlugin& PluginB) {
-		return PluginA.Order < PluginB.Order;
-	});
+	return OutPlugins;
 }
-void UCheckToolEditorSubsystem::UnregisterPlugins(TArray<UCheckToolPlugin*> PluginContextList)
+TArray<UCheckToolPlugin*> UCheckToolEditorSubsystem::UnregisterPlugins(TArray<UCheckToolPlugin*> PluginContextList)
 {
+	TArray<UCheckToolPlugin*> OutPlugins;
 	for (auto Plugin : PluginContextList)
 	{
 		if (FindPlugin(Plugin))
 		{
+			CheckToolPlugins.Remove(Plugin);
 			UClass* InClass = Plugin->GetClass();
-			if (InClass->IsChildOf(UCheckToolCollection::StaticClass()))
-			{
-				CollectionList.Remove(Plugin);
-			}
-			else if (InClass->IsChildOf(UCheckToolValidation::StaticClass()))
-			{
-				ValidatioList.Remove(Plugin);
-			}
+		}
+		else
+		{
+			OutPlugins.Add(Plugin);
 		}
 	}
+	return OutPlugins;
 }
 
-CHECKTOOL_API void UCheckToolEditorSubsystem::ClearAllPlugins()
+void UCheckToolEditorSubsystem::ClearAllPlugins()
 {
-	
 	CollectionList.Empty();
 	ValidatioList.Empty();
 }
@@ -60,16 +55,16 @@ CHECKTOOL_API void UCheckToolEditorSubsystem::ClearAllPlugins()
 void UCheckToolEditorSubsystem::Publish()
 {
 	Context->Clear();
-	float PluginNum = CollectionList.Num() + ValidatioList.Num();
-	FScopedSlowTask Progress(PluginNum, FText::FromString("asdsa"));
+	float PluginNum = CheckToolPlugins.Num();
+	FScopedSlowTask Progress(PluginNum, FText::FromString("Start CheckTool"));
 	Progress.MakeDialog(false, true);
-	for (auto Plugin : CollectionList)
+	for (auto Plugin : GetPlugins(TSubclassOf<UCheckToolCollection>(UCheckToolCollection::StaticClass())))
 	{
 		UCheckToolCollection* Collection = Cast<UCheckToolCollection>(Plugin);
 		Collection->Process(Context);
-		Progress.EnterProgressFrame(1, FText::FromString(FString::Printf(TEXT("当前运行到 %s"), *Collection->DisplayLabel)));
+		Progress.EnterProgressFrame(1, FText::FromString(FString::Printf(TEXT("Current Task: %s"), *Collection->DisplayLabel)));
 	}
-	for (auto Plugin : ValidatioList)
+	for (auto Plugin : GetPlugins(TSubclassOf<UCheckToolValidation>(UCheckToolValidation::StaticClass())))
 	{
 		for (auto& Instance : Context->GetInstanceList())
 		{
@@ -83,10 +78,12 @@ void UCheckToolEditorSubsystem::Publish()
 	}
 }
 
-CHECKTOOL_API bool UCheckToolEditorSubsystem::FindPlugin(UCheckToolPlugin* Plugin)
+bool UCheckToolEditorSubsystem::FindPlugin(UCheckToolPlugin* Plugin)
 {
 	bool Result = false;
 	UClass* InClass = Plugin->GetClass();
+
+	Result = CheckToolPlugins.Find(Plugin) != INDEX_NONE ? true : false;
 	if (InClass->IsChildOf(UCheckToolCollection::StaticClass()))
 	{
 		Result = CollectionList.Find(Plugin) != INDEX_NONE? true : false;
@@ -94,13 +91,83 @@ CHECKTOOL_API bool UCheckToolEditorSubsystem::FindPlugin(UCheckToolPlugin* Plugi
 	}
 	else if (InClass->IsChildOf(UCheckToolValidation::StaticClass()))
 	{
-
 		Result = ValidatioList.Find(Plugin) != INDEX_NONE ? true : false;
 	}
 	return  Result;
 }
 
-CHECKTOOL_API int32 UCheckToolEditorSubsystem::GetProcessNumber()
+bool UCheckToolEditorSubsystem::CheckPlugin(UCheckToolPlugin* Plugin)
+{
+	bool Result = true;
+	UClass* InClass = Plugin->GetClass();
+	for (TFieldIterator<FProperty> PropertyIt(InClass); PropertyIt; ++PropertyIt)
+	{
+		FProperty* Property = *PropertyIt;
+		check(Property != NULL);
+		if (Property->GetClass() == FObjectProperty::StaticClass())
+		{
+			
+		}
+		else if (Property->GetClass() == FNameProperty::StaticClass())
+		{
+			
+		}
+		else if (Property->GetClass() == FStrProperty::StaticClass())
+		{
+
+		}
+	}
+	return Result;
+}
+
+int32 UCheckToolEditorSubsystem::GetProcessNumber()
 {
 	return int32();
+}
+
+TArray<UCheckToolPlugin*> UCheckToolEditorSubsystem::GetPlugins(TSubclassOf<UCheckToolPlugin> PluginType, bool IsSort)
+{
+	TArray<UCheckToolPlugin*> OutPlugins;
+	UClass* InClass = PluginType.Get();
+
+	for (auto Plugin : CheckToolPlugins)
+	{
+		if (InClass == Plugin->GetClass())
+		{
+			OutPlugins.Add(Plugin);
+		}
+	}
+	if (IsSort)
+	{
+		OutPlugins.Sort([](const UCheckToolPlugin& PluginA, const UCheckToolPlugin& PluginB) {
+			return PluginA.Order < PluginB.Order;
+			});
+	}
+	return OutPlugins;
+}
+
+bool UCheckToolEditorSubsystem::RegisterAssetCreatedDelegate(FCheckToolOnAssetLoaded Callback)
+{
+	bool Result = true;
+	FDelegateHandle DelegateHandle = OnAssetAddedDelegate.AddLambda([Callback](const FAssetData& InAssetData)
+	{
+		Callback.ExecuteIfBound(InAssetData);
+	});
+	return Result;
+}
+
+bool UCheckToolEditorSubsystem::UnregisterAssetCreatedDelegate()
+{
+	bool Result = true;
+	return Result;
+}
+
+void UCheckToolEditorSubsystem::OnAssetAdded(const FAssetData& InAssetData)
+{
+	OnAssetAddedDelegate.Broadcast(InAssetData);
+}
+
+void UCheckToolEditorSubsystem::ShowWindow()
+{
+	FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
 }

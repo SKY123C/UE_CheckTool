@@ -9,6 +9,8 @@
 class FToolBarBuilder;
 class FMenuBuilder;
 
+DECLARE_LOG_CATEGORY_EXTERN(CheckTool, Log, All)
+
 class FCheckToolModule : public IModuleInterface
 {
 public:

@@ -9,3 +9,8 @@ bool UCheckToolValidation::Process_Implementation(const FCheckToolInstance& Inst
 {
 	return false;
 }
+
+void UCheckToolValidation::AddLog(ECheckToolLog CheckToolLogType, const FCheckToolInstance& Instance, FString InStr)
+{
+	PluginLog.WriteLogForAssetData(CheckToolLogType, Instance, InStr);
+}

@@ -31,3 +31,10 @@ public:
 private:
 	TArray<FCheckToolInstance> InstanceList;
 };
+
+UENUM(BlueprintType)
+enum class ECheckToolLog : uint8
+{
+	Error,
+	Warning,
+};
