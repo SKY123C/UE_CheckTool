@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "CheckData.h"
+#include "CheckToolContext.h"
 #include "PluginLog.h"
 #include "CheckTemplate.generated.h"
 
@@ -21,10 +22,10 @@ public:
 	TArray<FName> Families;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Base")
-	bool Enable;
+	bool Enable = true;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Base", meta = (EditCondition = "true"))
-	float Order;
+	float Order = 0.0f;
 
 };
 
@@ -57,4 +58,7 @@ public:
 public:
 	UFUNCTION(BlueprintCallable)
 	void AddLog(ECheckToolLog CheckToolLogType, const FCheckToolInstance& Instance, FString InStr);
+
+	UFUNCTION(BlueprintCallable)
+	FString ToLog();
 };

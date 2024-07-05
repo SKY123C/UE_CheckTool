@@ -28,6 +28,8 @@ public:
 	TArray<FCheckToolInstance>& GetInstanceList(){return InstanceList;};
 
 	void Clear(){ InstanceList.Empty(); };
+
+	void PackageInstanceData();
 private:
 	TArray<FCheckToolInstance> InstanceList;
 };

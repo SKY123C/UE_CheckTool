@@ -45,6 +45,7 @@ public class CheckTool : ModuleRules
 				"Slate",
 				"SlateCore",
                 "AssetRegistry",
+				"PropertyEditor",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

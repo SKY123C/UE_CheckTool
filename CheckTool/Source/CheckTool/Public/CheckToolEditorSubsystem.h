@@ -1,58 +1,74 @@
-#pragma once
+﻿#pragma once
 #include "TemplateClass/CheckTemplate.h"
+#include "CheckToolContext.h"
 #include "CheckToolEditorSubsystem.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FCheckToolOnAssetAdded, const FAssetData&);
-DECLARE_DYNAMIC_DELEGATE_OneParam(FCheckToolOnAssetLoaded, const FAssetData&, AssetData);
+DECLARE_DYNAMIC_DELEGATE_OneParam(FCheckToolOnAssetLoaded, FString, PackagePath);
+
+DECLARE_MULTICAST_DELEGATE(FValidateFinshed);
+DECLARE_MULTICAST_DELEGATE(FCollectFinshed);
+
+DECLARE_DYNAMIC_DELEGATE(FCheckToolValidateFinshed);
+DECLARE_DYNAMIC_DELEGATE(FCheckToolCollectFinshed);
+
+
+
 
 UCLASS(MinimalAPI)
 class UCheckToolEditorSubsystem : public UEditorSubsystem
 {
 	GENERATED_BODY()
 public:
-	UCheckToolEditorSubsystem();
+
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	virtual void Deinitialize() override;
 	UFUNCTION(BlueprintCallable)
-	CHECKTOOL_API TArray<UCheckToolPlugin*> RegisterPlugins(TArray<UCheckToolPlugin*> PluginContextLis);
-
-	UFUNCTION(BlueprintCallable)
-	CHECKTOOL_API TArray<UCheckToolPlugin*> UnregisterPlugins(TArray<UCheckToolPlugin*> PluginContextLis);
+	TArray<UCheckToolPlugin*> RegisterPlugins(TArray<UCheckToolPlugin*> PluginContextLis);
 
 	UFUNCTION(BlueprintCallable)
-	CHECKTOOL_API void ClearAllPlugins();
+	TArray<UCheckToolPlugin*> UnregisterPlugins(TArray<UCheckToolPlugin*> PluginContextLis);
 
 	UFUNCTION(BlueprintCallable)
-	CHECKTOOL_API void Publish();
+	void ClearAllPlugins();
 
 	UFUNCTION(BlueprintCallable)
-	CHECKTOOL_API bool FindPlugin(UCheckToolPlugin* Plugin);
-
-	CHECKTOOL_API bool CheckPlugin(UCheckToolPlugin* Plugin);
-
-	CHECKTOOL_API int32 GetProcessNumber();
+	void Publish();
 
 	UFUNCTION(BlueprintCallable)
-	CHECKTOOL_API TArray<UCheckToolPlugin*> GetPlugins(TSubclassOf<UCheckToolPlugin> PluginType, bool IsSort=true);
+	void Validate();
+
+	UFUNCTION(BlueprintCallable)
+	bool FindPlugin(UCheckToolPlugin* Plugin);
+
+	bool CheckPlugin(UCheckToolPlugin* Plugin);
+
+	int32 GetProcessNumber();
+
+	UFUNCTION(BlueprintCallable)
+	TArray<UCheckToolPlugin*> GetPlugins(TSubclassOf<UCheckToolPlugin> PluginType = NULL, bool IsSort=true);
 
 public:
 	UFUNCTION(BlueprintCallable)
-	CHECKTOOL_API bool RegisterAssetCreatedDelegate(FCheckToolOnAssetLoaded Callback);
+	bool RegisterAssetCreatedDelegate(FCheckToolOnAssetLoaded Callback);
 
 	UFUNCTION(BlueprintCallable)
-	CHECKTOOL_API bool UnregisterAssetCreatedDelegate();
+	bool UnregisterAssetCreatedDelegate();
 
 	void OnAssetAdded(const FAssetData& InAssetData);
 
 	UFUNCTION(BlueprintCallable)
-	CHECKTOOL_API void ShowWindow();
+	void ShowWindow();
 
 private:
-	TArray<UCheckToolPlugin*> CollectionList;
-	TArray<UCheckToolPlugin*> ValidatioList;
+	//UPROPERTY()
 	TArray<UCheckToolPlugin*> CheckToolPlugins;
+
 	UCheckToolContext* Context;
 	FCheckToolOnAssetAdded OnAssetAddedDelegate;
-
+	FValidateFinshed ValidateFinshedDelegate;
+	FCollectFinshed CollectFinshedDelegate;
 private:
 	TSharedPtr<SWindow> Window;
+
 };

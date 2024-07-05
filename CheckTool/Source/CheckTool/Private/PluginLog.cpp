@@ -2,6 +2,7 @@
 
 FPluginLog::FPluginLog()
 {
+	RegisterLog();
 }
 
 

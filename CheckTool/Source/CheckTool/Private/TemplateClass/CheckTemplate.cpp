@@ -14,3 +14,8 @@ void UCheckToolValidation::AddLog(ECheckToolLog CheckToolLogType, const FCheckTo
 {
 	PluginLog.WriteLogForAssetData(CheckToolLogType, Instance, InStr);
 }
+
+FString UCheckToolValidation::ToLog()
+{
+	return PluginLog.ToLog();
+}

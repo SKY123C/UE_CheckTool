@@ -4,6 +4,9 @@
 #include "Widgets/Input/SSpinBox.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/SFrameRatePicker.h"
+#include "CheckToolEditorSubsystem.h"
+#include "PropertyEditorModule.h"
+#include "IDetailsView.h"
 
 
 void SCheckToolWindow::Construct(const FArguments& InArgs, TSharedRef<FCheckTooler> InCheckTooler)
@@ -43,13 +46,57 @@ void SCheckToolWindow::Construct(const FArguments& InArgs, TSharedRef<FCheckTool
 			[
 				CheckBox
 			];
-		TSharedRef<SBorder> a =SNew(SBorder)
+
+		
+		TSharedPtr<SVerticalBox> ExpandLayout;
+		TSharedRef<SBorder> a = SNew(SBorder)
 		[
-			SNew(SButton)
-			.Text(FText::FromName(Label))
+			SAssignNew(ExpandLayout, SVerticalBox)
 		];
 		WidgetStack.Add(a);
 		Layout->AddSlot()[a];
+
+		FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+		UCheckToolEditorSubsystem* System = GEditor->GetEditorSubsystem<UCheckToolEditorSubsystem>();
+		TArray<UCheckToolPlugin*> PluginList = System->GetPlugins();
+		for (auto Plugin : PluginList)
+		{
+			FDetailsViewArgs DetailsViewArgs(false, false, false, FDetailsViewArgs::HideNameArea);
+			DetailsViewArgs.bAllowSearch = false;
+			TSharedRef<IDetailsView> DetailsWidget = PropertyEditorModule.CreateDetailView(DetailsViewArgs);
+			DetailsWidget->SetObject(Plugin);
+			TSharedRef<SExpandableArea> Area = SNew(SExpandableArea)
+			.BodyContent()[DetailsWidget]
+			.HeaderContent()
+			[
+				SNew(SHorizontalBox)
+				+ SHorizontalBox::Slot()
+				.VAlign(VAlign_Center)
+				[
+					SNew(STextBlock)
+					.Text(FText::FromString(Plugin->DisplayLabel))
+					.Font(FAppStyle::Get().GetFontStyle("NormalFontBold"))
+				]
+				+ SHorizontalBox::Slot()
+				.VAlign(VAlign_Center)
+				.HAlign(HAlign_Right)
+				.AutoWidth()
+				[
+					SNew(SButton)
+						.ButtonStyle(FAppStyle::Get(), "SimpleButton")
+						.ContentPadding(FMargin(1, 0))
+						[
+							SNew(SImage)
+								.Image(FAppStyle::Get().GetBrush("Icons.PlusCircle"))
+								.ColorAndOpacity(FSlateColor::UseForeground())
+						]
+				]
+			];
+			ExpandLayout->AddSlot()
+				[
+					Area
+			];
+		}
 	}
 
 }
@@ -80,4 +127,25 @@ void SCheckToolWindow::OnTabClicked(ECheckBoxState NewCheckboxState, int32 TabIn
 	}
 
 
+}
+
+TSharedPtr<SBorder> SCheckToolWindow::GetPluginWidgetByType(UClass* InClass)
+{
+	
+	TSharedPtr<SVerticalBox> ExpandLayout;
+	FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditor");
+	TSharedRef<SBorder> a = SNew(SBorder)
+	[
+		SAssignNew(ExpandLayout, SVerticalBox)
+	];
+	UCheckToolEditorSubsystem* System = GEditor->GetEditorSubsystem<UCheckToolEditorSubsystem>();
+	TArray<UCheckToolPlugin*> PluginList = System->GetPlugins(InClass);
+	for (auto Plugin : PluginList)
+	{
+		
+
+
+	}
+
+	return TSharedPtr<SBorder>();
 }
